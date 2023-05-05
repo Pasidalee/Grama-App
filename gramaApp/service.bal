@@ -14,13 +14,3 @@ service / on new http:Listener(9090) {
         return userEntry.police_clearance;
     }
 }
-
-
-public type UserNotFoundError record {|
-    *http:NotFound;
-    ErrorMsg body;
-|};
-
-public type ErrorMsg record {|
-    string errmsg;
-|};
