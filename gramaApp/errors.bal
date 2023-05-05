@@ -5,6 +5,11 @@ public type UserNotFoundError record {|
     ErrorMsg body;
 |};
 
+public type InvalidIdentityError record {|
+    *http:NotAcceptable;
+    ErrorMsg body;
+|};
+
 public type ErrorMsg record {|
     string errmsg;
 |};
