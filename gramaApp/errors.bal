@@ -10,6 +10,11 @@ public type InvalidIdentityError record {|
     ErrorMsg body;
 |};
 
+public type InvalidAddressError record {|
+    *http:NotAcceptable;
+    ErrorMsg body;
+|};
+
 public type ErrorMsg record {|
     string errmsg;
 |};
