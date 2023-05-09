@@ -1,4 +1,15 @@
+import ballerinax/slack;
+import ballerina/log;
 import ballerina/http;
+
+
+slack:ConnectionConfig slackConfig = {
+    auth: {
+        token: "xoxp-5230401240869-5218804671911-5230599377701-62b4900fa7e5f6eb83833b6375f420eb"
+    }
+};
+
+// webhookUrl:https://hooks.slack.com/services/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
 
 service / on new http:Listener(9090) {
 
@@ -38,7 +49,21 @@ service / on new http:Listener(9090) {
         }
         return userEntry.user_id;
     }
-    
+
+     resource function get sendMessage(string user_message) returns string|error{
+        log:printInfo("Slack called");
+        slack:Client slackClient = check new (slackConfig);
+
+        slack:Message messageParams = {
+            channelName: "general",
+            text: user_message
+        };
+
+        string postResponse = check slackClient->postMessage(messageParams);
+        log:printInfo("Message sent" + postResponse);
+        return postResponse;
+    }
+
 }
 
 function getUserEntryByAddress(string address) returns UserEntry? {
