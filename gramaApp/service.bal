@@ -1,4 +1,11 @@
+import ballerinax/slack;
 import ballerina/http;
+
+slack:ConnectionConfig slackConfig = {
+    auth: {
+        token: "AUTH_TOKEN"
+    }
+};
 
 service / on new http:Listener(9090) {
 
@@ -38,7 +45,20 @@ service / on new http:Listener(9090) {
         }
         return userEntry.user_id;
     }
-    
+
+    resource function post sendMessage(string user_message) returns string|error {
+        slack:Client slackClient = check new (slackConfig);
+
+        slack:Message messageParams = {
+            channelName: "general",
+            text: user_message
+        };
+
+        string postResponse = check slackClient->postMessage(messageParams);
+        check slackClient->joinConversation("general");
+        return postResponse;
+    }
+
 }
 
 function getUserEntryByAddress(string address) returns UserEntry? {
