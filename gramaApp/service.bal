@@ -1,15 +1,11 @@
 import ballerinax/slack;
-import ballerina/log;
 import ballerina/http;
-
 
 slack:ConnectionConfig slackConfig = {
     auth: {
-        token: "xoxp-5230401240869-5218804671911-5230599377701-62b4900fa7e5f6eb83833b6375f420eb"
+        token: "AUTH_TOKEN"
     }
 };
-
-// webhookUrl:https://hooks.slack.com/services/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
 
 service / on new http:Listener(9090) {
 
@@ -50,8 +46,7 @@ service / on new http:Listener(9090) {
         return userEntry.user_id;
     }
 
-     resource function get sendMessage(string user_message) returns string|error{
-        log:printInfo("Slack called");
+    resource function post sendMessage(string user_message) returns string|error {
         slack:Client slackClient = check new (slackConfig);
 
         slack:Message messageParams = {
@@ -60,7 +55,7 @@ service / on new http:Listener(9090) {
         };
 
         string postResponse = check slackClient->postMessage(messageParams);
-        log:printInfo("Message sent" + postResponse);
+        check slackClient->joinConversation("general");
         return postResponse;
     }
 
