@@ -40,6 +40,12 @@ isolated client class GramaCheckDao {
         return completeAddress;
     }
 
+    isolated function getConatctNumber(string userId) returns string|error {
+        sql:ParameterizedQuery query = `SELECT contact_number FROM user_details WHERE user_id = ${userId}`;
+        string conatct_number = check self.dbClient->queryRow(query);
+        return conatct_number;
+    }
+
     isolated function getPoliceStatus(string userId) returns boolean|error {
         sql:ParameterizedQuery query = `SELECT police_check FROM user_details WHERE user_id = ${userId}`;
         boolean police_check = check self.dbClient->queryRow(query);
@@ -49,7 +55,7 @@ isolated client class GramaCheckDao {
     isolated function storeStatus(string userId, string status) returns error? {
         sql:ParameterizedQuery query = `UPDATE user_details SET status = ${status} WHERE user_id = ${userId}`;
         _ = check self.dbClient->execute(query);
-    } 
+    }
 
     isolated function getStatus(string userId) returns string|error {
         sql:ParameterizedQuery query = `SELECT status FROM user_details WHERE user_id = ${userId}`;
