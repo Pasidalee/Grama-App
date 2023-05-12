@@ -1,6 +1,5 @@
 import ballerinax/slack;
 import ballerina/http;
-import ballerina/io;
 
 configurable string host = ?;
 configurable string username = ?;
@@ -9,68 +8,58 @@ configurable string database = ?;
 configurable int port = ?;
 configurable string slackToken = ?;
 
-slack:ConnectionConfig slackConfig = {
-    auth: {
-        token: slackToken
-    }
-};
+@http:ServiceConfig {
+    interceptors: [new ResponseErrorInterceptor()]
+}
+isolated service / on new http:Listener(9090) {
 
-service / on new http:Listener(9090) {
+    private final GramaCheckDao gramacheckDao;
+    private final slack:Client slackClient;
+    private final slack:ConnectionConfig slackConfig = {auth: {token: slackToken}};
 
-    GramaCheckDao gramacheckDao;
-    public function init() returns error? {
+    public isolated function init() returns error? {
         // Initialize the database
         self.gramacheckDao = check new (host, username, password, database, port);
+        self.slackClient = check new (self.slackConfig);
     }
 
-    resource function get policecheck(string userId) returns boolean|UserNotFoundError {
-        boolean|error policeClearance = self.gramacheckDao.getPoliceStatus(userId);
-        if policeClearance is error {
-            return {
-                body: {
-                    errmsg: string `User not found`
-                }
-            };
-        }
+    isolated resource function get policecheck(string userId) returns boolean|error {
+        boolean policeClearance = check self.gramacheckDao.getPoliceStatus(userId);
         return policeClearance;
     }
 
-    resource function get identitycheck(string userId) returns string|InvalidIdentityError {
-        string|error user = self.gramacheckDao.getUser(userId);
-        if user is error {
-            return {
-                body: {
-                    errmsg: string `Identity is Invalid`
-                }
-            };
-        }
+    isolated resource function get identitycheck(string userId) returns string|error {
+        string user = check self.gramacheckDao.getUser(userId);
         return user;
     }
 
-    resource function get addresscheck(string userId, string address) returns string|UserNotFoundError|InvalidAddressError {
-        string|error userAddress = self.gramacheckDao.getUserAddress(userId);
-        if userAddress is error {
-            return <UserNotFoundError>{body: {errmsg: string `User not found`}};
-        }
-        io:println(userAddress);
-        io:println(address);
-        if userAddress.equalsIgnoreCaseAscii(address) == false {
-            return <InvalidAddressError>{body: {errmsg: string `Address is Invalid`}};
+    isolated resource function get addresscheck(string userId, string address) returns string|error {
+        string userAddress = check self.gramacheckDao.getUserAddress(userId);
+        if userAddress.equalsIgnoreCaseAscii(address.trim()) == false {
+            return INVALID_ADDRESS;
         }
         return userAddress;
     }
 
-    resource function post sendMessage(string user_message) returns string|error {
-        slack:Client slackClient = check new (slackConfig);
-
+    isolated resource function post sendMessage(string user_message) returns string|error {
         slack:Message messageParams = {
             channelName: "general",
             text: user_message
         };
 
-        string postResponse = check slackClient->postMessage(messageParams);
-        check slackClient->joinConversation("general");
+        string postResponse = check self.slackClient->postMessage(messageParams);
+        check self.slackClient->joinConversation("general");
         return postResponse;
+
+    }
+
+    isolated resource function post storeStatus(string userId, string status) returns error? {
+        _ = check self.gramacheckDao.storeStatus(userId, status);
+    }
+
+    isolated resource function get getStatus(string userId) returns string|error {
+        string status = check self.gramacheckDao.getStatus(userId);
+        return status;
     }
 
 }

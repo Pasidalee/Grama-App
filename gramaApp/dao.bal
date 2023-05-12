@@ -7,21 +7,21 @@ type Address record {|
     string? city;
 |};
 
-client class GramaCheckDao {
+isolated client class GramaCheckDao {
 
-    postgresql:Client dbClient;
-    public function init(string host, string username, string password, string database, int port) returns error? {
+    private final postgresql:Client dbClient;
+    public isolated function init(string host, string username, string password, string database, int port) returns error? {
         // Initialize the database
-        self.dbClient = check new ("silly.db.elephantsql.com", "fomclknn", "fS9aKK3EOMAoj61skMc7Kn2W1pd1SYmA", "fomclknn", 5432);
+        self.dbClient = check new (host, username, password, database, port);
     }
 
-    function getUser(string userId) returns string|error {
+    isolated function getUser(string userId) returns string|error {
         sql:ParameterizedQuery query = `SELECT user_id FROM user_details WHERE user_id = ${userId}`;
         string user = check self.dbClient->queryRow(query);
         return user;
     }
 
-    function getUserAddress(string userId) returns string|error {
+    isolated function getUserAddress(string userId) returns string|error {
         sql:ParameterizedQuery query = `SELECT address_line1, address_line2, city FROM user_details WHERE user_id = ${userId}`;
         Address address = check self.dbClient->queryRow(query);
         string completeAddress = "";
@@ -37,13 +37,23 @@ client class GramaCheckDao {
         if city != () {
             completeAddress += ", " + city;
         }
-
         return completeAddress;
     }
 
-    function getPoliceStatus(string userId) returns boolean|error {
+    isolated function getPoliceStatus(string userId) returns boolean|error {
         sql:ParameterizedQuery query = `SELECT police_check FROM user_details WHERE user_id = ${userId}`;
         boolean police_check = check self.dbClient->queryRow(query);
         return police_check;
+    }
+
+    isolated function storeStatus(string userId, string status) returns error? {
+        sql:ParameterizedQuery query = `UPDATE user_details SET status = ${status} WHERE user_id = ${userId}`;
+        _ = check self.dbClient->execute(query);
+    } 
+
+    isolated function getStatus(string userId) returns string|error {
+        sql:ParameterizedQuery query = `SELECT status FROM user_details WHERE user_id = ${userId}`;
+        string status = check self.dbClient->queryRow(query);
+        return status;
     }
 }
