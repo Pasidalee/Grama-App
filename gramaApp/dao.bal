@@ -15,10 +15,14 @@ isolated client class GramaCheckDao {
         self.dbClient = check new (host, username, password, database, port);
     }
 
+    isolated function storeRequest(string userId) returns error? {
+        sql:ParameterizedQuery query = `INSERT INTO certificate_requests (user_id) VALUES (${userId})`;
+        _ = check self.dbClient->execute(query);
+    }
+
     isolated function getUser(string userId) returns string|error {
         sql:ParameterizedQuery query = `SELECT user_id FROM user_details WHERE user_id = ${userId}`;
-        string user = check self.dbClient->queryRow(query);
-        return user;
+        return self.dbClient->queryRow(query);
     }
 
     isolated function getUserAddress(string userId) returns string|error {
@@ -40,26 +44,41 @@ isolated client class GramaCheckDao {
         return completeAddress;
     }
 
-    isolated function getConatctNumber(string userId) returns string|error {
-        sql:ParameterizedQuery query = `SELECT contact_number FROM user_details WHERE user_id = ${userId}`;
-        string conatct_number = check self.dbClient->queryRow(query);
-        return conatct_number;
-    }
-
     isolated function getPoliceStatus(string userId) returns boolean|error {
         sql:ParameterizedQuery query = `SELECT police_check FROM user_details WHERE user_id = ${userId}`;
-        boolean police_check = check self.dbClient->queryRow(query);
-        return police_check;
+        return self.dbClient->queryRow(query);
     }
 
-    isolated function storeStatus(string userId, string status) returns error? {
-        sql:ParameterizedQuery query = `UPDATE user_details SET status = ${status} WHERE user_id = ${userId}`;
+    isolated function updateStatus(string userId, string status) returns error? {
+        sql:ParameterizedQuery query = `UPDATE certificate_requests SET status = ${status} WHERE user_id = ${userId} AND 
+            status != ${APPROVED} AND status != ${DECLINED}`;
         _ = check self.dbClient->execute(query);
     }
 
     isolated function getStatus(string userId) returns string|error {
-        sql:ParameterizedQuery query = `SELECT status FROM user_details WHERE user_id = ${userId}`;
-        string status = check self.dbClient->queryRow(query);
-        return status;
+        sql:ParameterizedQuery query = `SELECT status FROM certificate_requests WHERE user_id = ${userId} AND 
+            status != ${APPROVED} AND status != ${DECLINED}`;
+        return self.dbClient->queryRow(query);
     }
+
+    isolated function updateValidation(string validationType, string userId) returns error? {
+        sql:ParameterizedQuery query = ``;
+        if validationType == USER_ID_CHECK {
+            query = `UPDATE certificate_requests SET user_id_check = true WHERE user_id = ${userId} AND 
+            status != ${APPROVED} AND status != ${DECLINED}`;
+        } else if validationType == ADDRESS_CHECK {
+            query = `UPDATE certificate_requests SET address_check = true WHERE user_id = ${userId} AND 
+            status != ${APPROVED} AND status != ${DECLINED}`;
+        } else if validationType == POLICE_CHECK {
+            query = `UPDATE certificate_requests SET police_check = true WHERE user_id = ${userId} AND status != ${APPROVED} 
+            AND status != ${DECLINED}`;
+        }
+        _ = check self.dbClient->execute(query);
+    }
+
+    isolated function getConatctNumber(string userId) returns string|error {
+        sql:ParameterizedQuery query = `SELECT contact_number FROM user_details WHERE user_id = ${userId}`;
+        return self.dbClient->queryRow(query);
+    }
+
 }

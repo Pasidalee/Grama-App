@@ -1,5 +1,6 @@
 import ballerinax/slack;
 import ballerina/http;
+import ballerina/log;
 import ballerinax/vonage.sms as vs;
 
 configurable string host = ?;
@@ -8,8 +9,8 @@ configurable string password = ?;
 configurable string database = ?;
 configurable int port = ?;
 configurable string slackToken = ?;
-configurable string api_key = ?;
-configurable string api_secret = ?;
+final string api_key = "";
+final string api_secret = "";
 
 @http:ServiceConfig {
     interceptors: [new ResponseErrorInterceptor()]
@@ -26,25 +27,28 @@ isolated service / on new http:Listener(9090) {
         // Initialize the database
         self.gramacheckDao = check new (host, username, password, database, port);
         self.slackClient = check new (self.slackConfig);
-        self.baseClient = check new (self.smsconfig,serviceUrl = "https://rest.nexmo.com/sms");
+        self.baseClient = check new (self.smsconfig, serviceUrl = "https://rest.nexmo.com/sms");
     }
 
-    isolated resource function get policecheck(string userId) returns boolean|error {
-        boolean policeClearance = check self.gramacheckDao.getPoliceStatus(userId);
-        return policeClearance;
+    isolated resource function get identitycheck(string userId) returns error? {
+        _ = check self.gramacheckDao.storeRequest(userId);
+        _ = check self.gramacheckDao.getUser(userId);
+        _ = check self.gramacheckDao.updateValidation(USER_ID_CHECK, userId);
     }
 
-    isolated resource function get identitycheck(string userId) returns string|error {
-        string user = check self.gramacheckDao.getUser(userId);
-        return user;
-    }
-
-    isolated resource function get addresscheck(string userId, string address) returns string|error {
+    isolated resource function get addresscheck(string userId, string address) returns error? {
         string userAddress = check self.gramacheckDao.getUserAddress(userId);
-        if userAddress.equalsIgnoreCaseAscii(address.trim()) == false {
-            return INVALID_ADDRESS;
+        if userAddress.equalsIgnoreCaseAscii(address.trim()) {
+            _ = check self.gramacheckDao.updateValidation(ADDRESS_CHECK, userId);
         }
-        return userAddress;
+    }
+
+    isolated resource function get policecheck(string userId) returns error? {
+        boolean policeClearance = check self.gramacheckDao.getPoliceStatus(userId);
+        if policeClearance {
+            _ = check self.gramacheckDao.updateValidation(POLICE_CHECK, userId);
+        }
+        _ = check self.gramacheckDao.updateStatus(userId, PENDING);
     }
 
     isolated resource function post sendMessage(string user_message) returns string|error {
@@ -59,8 +63,15 @@ isolated service / on new http:Listener(9090) {
 
     }
 
-    isolated resource function post sendSMS(string userId,string sms_message) returns boolean|error {
+    isolated resource function post approveorDeclineCertificate(string userId, boolean approved) returns string|error {
+        if approved {
+            _ = check self.gramacheckDao.updateStatus(userId, APPROVED);
+        } else {
+            _ = check self.gramacheckDao.updateStatus(userId, DECLINED);
+        }
+
         string user_contactNumber = check self.gramacheckDao.getConatctNumber(userId);
+        string sms_message = approved ? CERTIFICATE_APPROVED : CERTIFICATE_DECLINED;
         vs:NewMessage message = {
             api_key: api_key,
             'from: "Vonage APIs",
@@ -68,21 +79,20 @@ isolated service / on new http:Listener(9090) {
             api_secret: api_secret,
             text: sms_message
         };
-        
-        vs:InlineResponse200|error response = self.baseClient->sendAnSms(message);
-        if (response is vs:InlineResponse200) {
-            return true;
-        } else {
-            return false;
-        }
-    }
 
-    isolated resource function post storeStatus(string userId, string status) returns error? {
-        _ = check self.gramacheckDao.storeStatus(userId, status);
+        vs:InlineResponse200|error response = self.baseClient->sendAnSms(message);
+        if response is error {
+            log:printError("Error sending SMS: ", err = response.message());
+        }
+        return sms_message;
     }
 
     isolated resource function get getStatus(string userId) returns string|error {
-        string status = check self.gramacheckDao.getStatus(userId);
+        _ = check self.gramacheckDao.getUser(userId);
+        string|error status = self.gramacheckDao.getStatus(userId);
+        if status is error && status.message() == NO_ROWS_ERROR_MSG {
+            return NOT_APPLIED_FOR_A_CERTIFICATE;
+        }
         return status;
     }
 
