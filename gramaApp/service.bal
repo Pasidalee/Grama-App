@@ -32,8 +32,14 @@ isolated service / on new http:Listener(9090) {
 
     isolated resource function get identitycheck(string userId) returns error? {
         _ = check self.gramacheckDao.storeRequest(userId);
-        _ = check self.gramacheckDao.getUser(userId);
-        _ = check self.gramacheckDao.updateValidation(USER_ID_CHECK, userId);
+        string|error user = self.gramacheckDao.getUser(userId);
+        if user == userId {
+            _ = check self.gramacheckDao.updateValidation(USER_ID_CHECK, userId);
+        } else if user is error && user.message() == NO_ROWS_ERROR_MSG {
+            log:printInfo("User not found in the database.", userId = userId);
+        } else if user is error {
+            return user;
+        }
     }
 
     isolated resource function get addresscheck(string userId, string address) returns error? {
