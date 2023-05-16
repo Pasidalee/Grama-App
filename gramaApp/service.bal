@@ -9,8 +9,8 @@ configurable string password = ?;
 configurable string database = ?;
 configurable int port = ?;
 configurable string slackToken = ?;
-final string api_key = "";
-final string api_secret = "";
+configurable string api_key = ?;
+configurable string api_secret = ?;
 
 @http:ServiceConfig {
     interceptors: [new ResponseErrorInterceptor()]
@@ -42,7 +42,7 @@ isolated service / on new http:Listener(9090) {
         }
     }
 
-    isolated resource function get addresscheck(string userId, string address) returns error? {
+    isolated resource function get addresscheck(string userId, string address) returns error?        {
         string userAddress = check self.gramacheckDao.getUserAddress(userId);
         if userAddress.equalsIgnoreCaseAscii(address.trim()) {
             _ = check self.gramacheckDao.updateValidation(ADDRESS_CHECK, userId);
