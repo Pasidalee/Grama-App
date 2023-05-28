@@ -7,6 +7,15 @@ type Address record {|
     string? city;
 |};
 
+type Request record {|
+    int request_id;
+    string user_id;
+    string status;
+    boolean user_id_check;
+    boolean address_check;
+    boolean police_check;
+|};
+
 isolated client class GramaCheckDao {
 
     private final mysql:Client dbClient;
@@ -79,6 +88,12 @@ isolated client class GramaCheckDao {
     isolated function getConatctNumber(string userId) returns string|error {
         sql:ParameterizedQuery query = `SELECT contact_number FROM user_details WHERE user_id = ${userId}`;
         return self.dbClient->queryRow(query);
+    }
+
+    isolated function getAllPendingRequests() returns stream<Request, sql:Error?>{
+        sql:ParameterizedQuery query = `SELECT * FROM certificate_requests WHERE status = ${PENDING}`;
+        stream<Request, sql:Error?> resultStream = self.dbClient->query(query);
+        return resultStream;
     }
 
 }
