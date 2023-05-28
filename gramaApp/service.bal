@@ -66,7 +66,6 @@ isolated service / on new http:Listener(9090) {
         string postResponse = check self.slackClient->postMessage(messageParams);
         check self.slackClient->joinConversation("general");
         return postResponse;
-
     }
 
     isolated resource function post approveorDeclineCertificate(string userId, boolean approved) returns string|error {
