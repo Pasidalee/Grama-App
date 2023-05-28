@@ -2,6 +2,7 @@ import ballerinax/slack;
 import ballerina/http;
 import ballerina/log;
 import ballerinax/vonage.sms as vs;
+import ballerina/sql;
 
 configurable string host = ?;
 configurable string username = ?;
@@ -99,6 +100,16 @@ isolated service / on new http:Listener(9090) {
             return NOT_APPLIED_FOR_A_CERTIFICATE;
         }
         return status;
+    }
+
+      isolated resource function get getAllUserInfo() returns record {}[]|error {
+        stream<Request, sql:Error?> req = self.gramacheckDao.getAllUserInfo();
+        Request [] userInfo = [];
+        check from record{} request in req
+            do {
+                userInfo.push(request);
+            };
+        return userInfo;
     }
 
 }
