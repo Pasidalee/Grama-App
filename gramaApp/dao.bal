@@ -1,5 +1,5 @@
 import ballerina/sql;
-import ballerinax/postgresql;
+import ballerinax/mysql;
 
 type Address record {|
     string? address_line1;
@@ -9,7 +9,7 @@ type Address record {|
 
 isolated client class GramaCheckDao {
 
-    private final postgresql:Client dbClient;
+    private final mysql:Client dbClient;
     public isolated function init(string host, string username, string password, string database, int port) returns error? {
         // Initialize the database
         self.dbClient = check new (host, username, password, database, port);

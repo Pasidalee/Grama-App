@@ -42,7 +42,7 @@ isolated service / on new http:Listener(9090) {
         }
     }
 
-    isolated resource function get addresscheck(string userId, string address) returns error? {
+    isolated resource function get addresscheck(string userId, string address) returns error?        {
         string userAddress = check self.gramacheckDao.getUserAddress(userId);
         if userAddress.equalsIgnoreCaseAscii(address.trim()) {
             _ = check self.gramacheckDao.updateValidation(ADDRESS_CHECK, userId);
@@ -66,7 +66,6 @@ isolated service / on new http:Listener(9090) {
         string postResponse = check self.slackClient->postMessage(messageParams);
         check self.slackClient->joinConversation("general");
         return postResponse;
-
     }
 
     isolated resource function post approveorDeclineCertificate(string userId, boolean approved) returns string|error {

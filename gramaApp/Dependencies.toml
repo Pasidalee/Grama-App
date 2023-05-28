@@ -331,7 +331,7 @@ dependencies = [
 
 [[package]]
 org = "ballerinax"
-name = "postgresql"
+name = "mysql"
 version = "1.6.2"
 dependencies = [
 	{org = "ballerina", name = "crypto"},
@@ -341,7 +341,7 @@ dependencies = [
 	{org = "ballerina", name = "time"}
 ]
 modules = [
-	{org = "ballerinax", packageName = "postgresql", moduleName = "postgresql"}
+	{org = "ballerinax", packageName = "mysql", moduleName = "mysql"}
 ]
 
 [[package]]
@@ -385,7 +385,7 @@ dependencies = [
 	{org = "ballerina", name = "sql"},
 	{org = "ballerina", name = "test"},
 	{org = "ballerinai", name = "observe"},
-	{org = "ballerinax", name = "postgresql"},
+	{org = "ballerinax", name = "mysql"},
 	{org = "ballerinax", name = "slack"},
 	{org = "ballerinax", name = "vonage.sms"}
 ]
