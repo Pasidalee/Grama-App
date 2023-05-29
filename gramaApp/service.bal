@@ -113,4 +113,15 @@ isolated service / on new http:Listener(9090) {
         return pendingRequests.toString();
     }
 
+    isolated resource function get getAllCompletedRequests() returns string|error {
+
+        stream<Request, sql:Error?> req = self.gramacheckDao.getAllCompletedRequests();
+        Request [] completedRequests = [];
+        check from record{} request in req
+            do {
+                completedRequests.push(request);
+            };
+        return completedRequests.toString();
+    }
+
 }

@@ -96,4 +96,10 @@ isolated client class GramaCheckDao {
         return resultStream;
     }
 
+    isolated function getAllCompletedRequests() returns stream<Request, sql:Error?>{
+        sql:ParameterizedQuery query = `SELECT * FROM certificate_requests WHERE status = ${APPROVED} OR status = ${DECLINED}`;
+        stream<Request, sql:Error?> resultStream = self.dbClient->query(query);
+        return resultStream;
+    }
+
 }
