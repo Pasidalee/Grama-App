@@ -102,7 +102,7 @@ isolated service / on new http:Listener(9090) {
         return status;
     }
 
-    isolated resource function get getAllPendingRequests() returns record {}[]|error {
+    isolated resource function get getAllPendingRequests() returns string|error {
 
         stream<Request, sql:Error?> req = self.gramacheckDao.getAllPendingRequests();
         Request [] pendingRequests = [];
@@ -110,7 +110,7 @@ isolated service / on new http:Listener(9090) {
             do {
                 pendingRequests.push(request);
             };
-        return pendingRequests;
+        return pendingRequests.toString();
     }
 
 }
