@@ -1,6 +1,7 @@
 import ballerinax/slack;
 import ballerina/http;
 import ballerina/log;
+import ballerina/sql;
 import ballerinax/vonage.sms as vs;
 
 configurable string host = ?;
@@ -99,6 +100,17 @@ isolated service / on new http:Listener(9090) {
             return NOT_APPLIED_FOR_A_CERTIFICATE;
         }
         return status;
+    }
+
+    isolated resource function get getAllPendingRequests() returns record {}[]|error {
+
+        stream<Request, sql:Error?> req = self.gramacheckDao.getAllPendingRequests();
+        Request [] pendingRequests = [];
+        check from record{} request in req
+            do {
+                pendingRequests.push(request);
+            };
+        return pendingRequests;
     }
 
 }
